@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+scenedetect[opencv]
+transformers<4.40
+numpy<2.0
+torch
+torchvision
+Pillow
+google-generativeai
+python-dotenv
