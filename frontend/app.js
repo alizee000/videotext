@@ -87,10 +87,8 @@ function renderResults(data) {
             const card = document.createElement('div');
             card.className = 'jira-card';
             
-            // Format description by replacing *text* with bold
-            let formattedDesc = ticket.description || '';
-            // Basic markdown bold to HTML
-            formattedDesc = formattedDesc.replace(/\\*(.*?)\\*/g, '<strong>$1</strong>');
+            // Render markdown safely using marked.js
+            const formattedDesc = marked.parse(ticket.description || '');
             
             card.innerHTML = `
                 <div class="jira-tag">
