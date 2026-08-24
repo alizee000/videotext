@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video to Jira</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <main class="container">
+        <header>
+            <h1>Video to Jira</h1>
+            <p>Upload a UI screen recording and instantly generate Agile User Stories</p>
+        </header>
+
+        <section class="upload-section" id="drop-zone">
+            <input type="file" id="video-upload" accept="video/mp4,video/x-m4v,video/*" hidden>
+            <div class="upload-content">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <h3>Drag & Drop Video</h3>
+                <p>or click to browse files</p>
+            </div>
+            <div class="loading-state hidden" id="loading-state">
+                <div class="spinner"></div>
+                <p>AI is analyzing the video workflow...</p>
+            </div>
+        </section>
+
+        <section class="results-section hidden" id="results-section">
+            <div class="results-header">
+                <h2>Generated User Stories</h2>
+                <div class="stats" id="processing-stats"></div>
+            </div>
+            <div class="jira-board" id="jira-board">
+                <!-- Jira Cards injected here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

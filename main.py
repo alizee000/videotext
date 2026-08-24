@@ -6,6 +6,7 @@ import json
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import google.generativeai as genai
 from PIL import Image
 import numpy as np
@@ -131,23 +132,19 @@ def generate_narrative_from_sequence(pil_images: list) -> str:
         return '{"error": "Missing Gemini API Key"}'
         
     prompt = '''
-You are an expert Product Manager and UX Researcher.
+You are an expert Agile Product Owner and UX Researcher.
 I am providing you with a chronological sequence of frames extracted from a UI screen recording video.
 
 CRITICAL INSTRUCTIONS:
-1. DO NOT HALLUCINATE. You must ONLY describe exactly what is visibly present in the frames. Do not guess, assume, or invent any actions, text, or context that is not explicitly shown in the pixels.
-2. BE HIGHLY EXPLAINABLE AND DETAILED. Extract as much concrete information as possible. Read the exact text on the screen, describe the exact layout of the dashboard, and specify the exact names of menus, buttons, charts, or search queries visible.
-3. Your narrative must be a step-by-step, highly detailed breakdown of the user's journey, explaining what they saw and what they did based STRICTLY on the visual evidence.
-
-Please provide your output in valid JSON format exactly like this:
-{
-  "scene_captions": [
-    "Frame 1: The user is on a dashboard titled 'X'. The sidebar contains menus for 'Y' and 'Z'. A bar chart is visible showing...",
-    "Frame 2: The user clicks the 'Settings' button located in the top right...",
-    ...
-  ],
-  "narrative": "A cohesive, highly detailed user story narrative weaving the chronological actions together. Must be strictly grounded in the visual evidence."
-}
+1. DO NOT HALLUCINATE. You must ONLY describe exactly what is visibly present in the frames. Analyze the chronological actions taken by the user.
+2. Group related actions into logical features or tasks. For each distinct feature or workflow, generate a separate JIRA User Story.
+3. You MUST output your response as a strictly valid JSON array of objects exactly like this:
+[
+  {
+    "title": "A concise, clear title for the JIRA ticket",
+    "description": "As a [User Persona], \\nI want to [Action/Goal], \\nSo that [Value/Benefit].\\n\\n*Acceptance Criteria:*\\n- [Criterion 1]\\n- [Criterion 2]\\n\\n*Workflow Observed:*\\n1. [Step 1]\\n2. [Step 2]"
+  }
+]
 '''
     
     # The payload is the prompt followed by all the images in chronological order
@@ -220,14 +217,16 @@ async def analyze_video(background_tasks: BackgroundTasks, file: UploadFile = Fi
         raw_response = generate_narrative_from_sequence(clear_pil_images)
         
         try:
-            parsed_result = json.loads(raw_response)
-        except:
-            parsed_result = {"narrative": raw_response, "scene_captions": []}
+            # Clean possible markdown wrapping from LLM response
+            clean_json = raw_response.replace("```json", "").replace("```", "").strip()
+            jira_tickets = json.loads(clean_json)
+        except Exception as e:
+            print(f"JSON Parse Error: {e}")
+            jira_tickets = []
         
         return JSONResponse(content={
             "status": "success",
-            "narrative": parsed_result.get("narrative", ""),
-            "scene_captions": parsed_result.get("scene_captions", []),
+            "jira_tickets": jira_tickets,
             "processing_stats": stats
         })
         
@@ -237,6 +236,10 @@ async def analyze_video(background_tasks: BackgroundTasks, file: UploadFile = Fi
     finally:
         if os.path.exists(tmp_video_path):
             os.remove(tmp_video_path)
+
+# --- Serve Static UI ---
+os.makedirs("frontend", exist_ok=True)
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
